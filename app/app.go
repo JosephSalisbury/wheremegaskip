@@ -282,7 +282,11 @@ const htmlTemplate = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#0074A2">
+    <meta name="description" content="Find your nearest Wandsworth Mega Skip location with live map and directions">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Where Mega Skip?</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -296,12 +300,20 @@ const htmlTemplate = `<!DOCTYPE html>
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             color: #333;
             background: #f5f5f5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
         
         #container {
             max-width: 900px;
             margin: 0 auto;
             padding: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            #container {
+                padding: 12px;
+            }
         }
         
         #header {
@@ -314,15 +326,36 @@ const htmlTemplate = `<!DOCTYPE html>
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
+        @media (max-width: 768px) {
+            #header {
+                padding: 20px 15px;
+                margin-bottom: 12px;
+                border-radius: 6px;
+            }
+        }
+        
         h1 {
             margin: 0 0 10px 0;
             font-size: 32px;
             font-weight: 600;
         }
         
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 24px;
+                margin: 0 0 8px 0;
+            }
+        }
+        
         #subtitle {
             font-size: 16px;
             opacity: 0.95;
+        }
+        
+        @media (max-width: 768px) {
+            #subtitle {
+                font-size: 14px;
+            }
         }
         
         #date-banner {
@@ -333,10 +366,24 @@ const htmlTemplate = `<!DOCTYPE html>
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
+        @media (max-width: 768px) {
+            #date-banner {
+                padding: 15px;
+                margin-bottom: 12px;
+                border-radius: 6px;
+            }
+        }
+        
         #date-banner h2 {
             margin: 0 0 10px 0;
             color: #0074A2;
             font-size: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            #date-banner h2 {
+                font-size: 16px;
+            }
         }
         
         #date-info {
@@ -349,10 +396,26 @@ const htmlTemplate = `<!DOCTYPE html>
             gap: 20px;
         }
         
+        @media (max-width: 768px) {
+            #date-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+                margin-bottom: 12px;
+                padding-bottom: 12px;
+            }
+        }
+        
         #date-info h2 {
             white-space: nowrap;
             margin: 0;
             flex-shrink: 0;
+        }
+        
+        @media (max-width: 768px) {
+            #date-info h2 {
+                white-space: normal;
+            }
         }
         
         .time-info {
@@ -362,6 +425,14 @@ const htmlTemplate = `<!DOCTYPE html>
             text-align: right;
             flex-shrink: 1;
             max-width: 280px;
+        }
+        
+        @media (max-width: 768px) {
+            .time-info {
+                text-align: left;
+                max-width: 100%;
+                font-size: 12px;
+            }
         }
         
         #date-banner.disabled {
@@ -374,6 +445,19 @@ const htmlTemplate = `<!DOCTYPE html>
             display: flex;
             gap: 10px;
             align-items: center;
+        }
+        
+        @media (max-width: 768px) {
+            .control-group {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+                margin-bottom: 0;
+            }
+            
+            .control-group > span {
+                display: none; /* Hide 'or' separator on mobile */
+            }
         }
         
         .control-group:last-child {
@@ -398,6 +482,16 @@ const htmlTemplate = `<!DOCTYPE html>
             border: 2px solid #e0e0e0;
             border-radius: 4px;
             font-size: 14px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        @media (max-width: 768px) {
+            input[type="text"] {
+                padding: 14px 12px;
+                font-size: 16px; /* Prevents zoom on iOS */
+                min-height: 48px;
+            }
         }
         
         input[type="text"]:focus {
@@ -416,10 +510,30 @@ const htmlTemplate = `<!DOCTYPE html>
             cursor: pointer;
             transition: background 0.2s;
             white-space: nowrap;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            button {
+                width: 100%;
+                padding: 14px 20px;
+                font-size: 15px;
+                min-height: 48px; /* Touch-friendly target size */
+            }
         }
         
         button:hover {
             background: #005580;
+        }
+        
+        @media (hover: none) {
+            button:hover {
+                background: #0074A2; /* Disable hover on touch devices */
+            }
+            
+            button:active {
+                background: #005580;
+            }
         }
         
         button:disabled {
@@ -494,6 +608,15 @@ const htmlTemplate = `<!DOCTYPE html>
             display: none;
             cursor: pointer;
             transition: all 0.2s ease;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        @media (max-width: 768px) {
+            #nearest-info {
+                padding: 15px;
+                margin-bottom: 12px;
+                border-radius: 6px;
+            }
         }
         
         #nearest-info:hover {
@@ -501,10 +624,26 @@ const htmlTemplate = `<!DOCTYPE html>
             transform: translateY(-2px);
         }
         
+        @media (hover: none) {
+            #nearest-info:hover {
+                transform: none;
+            }
+            
+            #nearest-info:active {
+                transform: scale(0.98);
+            }
+        }
+        
         #nearest-info h3 {
             margin-top: 0;
             color: #FF7043;
             font-size: 22px;
+        }
+        
+        @media (max-width: 768px) {
+            #nearest-info h3 {
+                font-size: 18px;
+            }
         }
         
         #nearest-info.visible {
@@ -514,6 +653,13 @@ const htmlTemplate = `<!DOCTYPE html>
         .nearest-detail {
             margin: 10px 0;
             font-size: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            .nearest-detail {
+                font-size: 14px;
+                margin: 8px 0;
+            }
         }
         
         .nearest-detail strong {
@@ -527,10 +673,23 @@ const htmlTemplate = `<!DOCTYPE html>
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
+        @media (max-width: 768px) {
+            #skip-list {
+                padding: 15px;
+                border-radius: 6px;
+            }
+        }
+        
         #skip-list h3 {
             margin-top: 0;
             color: #0074A2;
             font-size: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            #skip-list h3 {
+                font-size: 18px;
+            }
         }
         
         #skip-items {
@@ -554,6 +713,15 @@ const htmlTemplate = `<!DOCTYPE html>
             font-size: 14px;
             color: #666;
             line-height: 1.6;
+        }
+        
+        @media (max-width: 768px) {
+            #footer {
+                margin-top: 20px;
+                padding: 15px;
+                font-size: 13px;
+                border-radius: 6px;
+            }
         }
         
         #footer p {
@@ -581,12 +749,32 @@ const htmlTemplate = `<!DOCTYPE html>
             break-inside: avoid;
             cursor: pointer;
             transition: all 0.2s ease;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0.05);
+            min-height: 48px; /* Touch-friendly */
+        }
+        
+        @media (max-width: 768px) {
+            .skip-item {
+                padding: 12px;
+            }
         }
         
         .skip-item:hover {
             background: #f0f0f0;
             border-left-color: #0074A2;
             transform: translateX(2px);
+        }
+        
+        @media (hover: none) {
+            .skip-item:hover {
+                background: #f9f9f9;
+                transform: none;
+            }
+            
+            .skip-item:active {
+                background: #f0f0f0;
+                border-left-color: #0074A2;
+            }
         }
         
         .skip-item.nearest {
@@ -600,10 +788,23 @@ const htmlTemplate = `<!DOCTYPE html>
             font-size: 16px;
         }
         
+        @media (max-width: 768px) {
+            .skip-item h4 {
+                font-size: 15px;
+                margin: 0 0 6px 0;
+            }
+        }
+        
         .skip-item p {
             margin: 4px 0;
             font-size: 14px;
             color: #666;
+        }
+        
+        @media (max-width: 768px) {
+            .skip-item p {
+                font-size: 13px;
+            }
         }
         
         .nearest-skip {
