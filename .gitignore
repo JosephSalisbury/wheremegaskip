@@ -1,0 +1,22 @@
+# Binaries
+wheremegaskip
+*.exe
+
+# Logs
+server.log
+*.log
+
+# Build artifacts
+/dist
+/build
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
