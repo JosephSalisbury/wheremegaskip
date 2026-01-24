@@ -59,6 +59,17 @@ func main() {
 	}
 }
 
+// Handler is the Vercel serverless function entry point
+func Handler(w http.ResponseWriter, r *http.Request) {
+	// Allow configurable cache TTL
+	if ttl := os.Getenv("CACHE_TTL_MINUTES"); ttl != "" {
+		if minutes, err := time.ParseDuration(ttl + "m"); err == nil {
+			cache.ttl = minutes
+		}
+	}
+	handleIndex(w, r)
+}
+
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 	// Set security headers
 	w.Header().Set("X-Content-Type-Options", "nosniff")
