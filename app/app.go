@@ -1046,6 +1046,7 @@ const htmlTemplate = `<!DOCTYPE html>
                 html += '<div class="skip-item" data-skip-index="' + index + '" onclick="focusSkip(' + index + ')">' +
                     '<h4>📍 ' + escapeHtml(toTitleCase(skip.address)) + '</h4>' +
                     '<p>📮 ' + escapeHtml(skip.postcode) + '</p>' +
+                    '<p>📅 ' + escapeHtml(skip.dateStr) + '</p>' +
                     '</div>';
             });
             container.innerHTML = html;
@@ -1261,7 +1262,8 @@ const htmlTemplate = `<!DOCTYPE html>
             
             nearestDetails.innerHTML = 
                 '<div class="nearest-detail"><strong>📍 Location:</strong> ' + escapeHtml(skip.address) + '</div>' +
-                '<div class="nearest-detail"><strong>📮 Postcode:</strong> ' + escapeHtml(skip.postcode) + '</div>';
+                '<div class="nearest-detail"><strong>📮 Postcode:</strong> ' + escapeHtml(skip.postcode) + '</div>' +
+                '<div class="nearest-detail"><strong>📅 Available on:</strong> ' + escapeHtml(skip.dateStr) + '</div>';
             
             nearestInfo.classList.add('visible');
             
@@ -1273,6 +1275,7 @@ const htmlTemplate = `<!DOCTYPE html>
                 html += '<div class="skip-item' + (isNearest ? ' nearest' : '') + '" data-skip-index="' + index + '" onclick="focusSkip(' + index + ')">' +
                     '<h4>' + (isNearest ? '🎯 ' : '📍 ') + escapeHtml(toTitleCase(s.address)) + '</h4>' +
                     '<p>📮 ' + escapeHtml(s.postcode) + '</p>' +
+                    '<p>📅 ' + escapeHtml(s.dateStr) + '</p>' +
                     '</div>';
             });
             container.innerHTML = html;
