@@ -741,7 +741,15 @@ const htmlTemplate = `<!DOCTYPE html>
         #footer a:hover {
             text-decoration: underline;
         }
-        
+
+        #footer .attribution {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 13px;
+            color: #888;
+        }
+
         .skip-item {
             padding: 15px;
             border-left: 4px solid #e0e0e0;
@@ -926,6 +934,7 @@ const htmlTemplate = `<!DOCTYPE html>
         <div id="footer">
             <p> See <a href="https://www.wandsworth.gov.uk/mega-skip-days" target="_blank" rel="noopener noreferrer">Wandsworth Council Mega Skip Days</a> for official information concering mega skip days and locations. </p>
             <p> This page is provided on a best-effort basis to help make it easier to find your nearest Mega Skip. This page is not affiliated with Wandsworth Council in any way.</p>
+            <p class="attribution">A <a href="https://salisburyheavyindustries.com" target="_blank" rel="noopener noreferrer">Salisbury Heavy Industries</a> project.</p>
         </div>
     </div>
     
