@@ -284,7 +284,7 @@ const htmlTemplate = `<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="theme-color" content="#0074A2">
-    <meta name="description" content="Find your nearest Wandsworth Mega Skip location with live map and directions">
+    <meta name="description" content="Find your nearest Wandsworth Mega Skip location with live map">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Where Mega Skip?</title>
