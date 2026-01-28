@@ -287,6 +287,7 @@ const htmlTemplate = `<!DOCTYPE html>
     <meta name="description" content="Find your nearest Wandsworth Mega Skip location with live map">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%230074A2' d='M4 10h24l-2 16H6L4 10z'/%3E%3Cpath fill='%2300A1C9' d='M2 8h28v4H2z'/%3E%3Cpath fill='%23005580' d='M6 12h20v2H6z'/%3E%3C/svg%3E">
     <title>Where Mega Skip?</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
