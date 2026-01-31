@@ -704,13 +704,33 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const skipLocations = {{.Locations}};
+        let skipLocations = [];
         let map, userMarker, markers = [];
         let userLocation = null;
         let nearestSkipIndex = null;
         let geocodedSkips = [];
         let routeLine = null;
         let selectedDate = null;
+
+        async function fetchSkipData(retryCount = 0) {
+            try {
+                const response = await fetch('/api/skips');
+                if (!response.ok) throw new Error('Failed to fetch');
+                return await response.json();
+            } catch (err) {
+                if (retryCount < 2) {
+                    return fetchSkipData(retryCount + 1);
+                }
+                throw err;
+            }
+        }
+
+        function showError(message) {
+            const container = document.getElementById('skip-items');
+            container.innerHTML = '<div class="error">' + escapeHtml(message) + '</div>';
+            document.getElementById('date-tabs').innerHTML = '<div class="error">Failed to load dates</div>';
+            document.getElementById('map-loading').classList.add('hidden');
+        }
 
         function getUniqueDates() {
             const seen = new Set();
@@ -801,15 +821,22 @@
         }
 
         // Initialize map centered on Wandsworth
-        function initMap() {
+        async function initMap() {
             map = L.map('map').setView([51.4567, -0.1910], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors',
                 maxZoom: 19
             }).addTo(map);
 
-            // Geocode all skips then add markers
-            geocodeAllSkips();
+            // Fetch skip data from API
+            try {
+                skipLocations = await fetchSkipData();
+                // Geocode all skips then add markers
+                geocodeAllSkips();
+            } catch (err) {
+                console.error('Failed to fetch skip data:', err);
+                showError('Failed to load skip locations. Please refresh the page to try again.');
+            }
         }
 
         async function geocodeAllSkips() {

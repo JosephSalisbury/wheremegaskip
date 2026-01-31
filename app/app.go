@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"net/url"
@@ -19,9 +18,6 @@ import (
 
 //go:embed index.html
 var htmlTemplate string
-
-// indexTemplate is parsed once at package init for better performance
-var indexTemplate = template.Must(template.New("index").Parse(htmlTemplate))
 
 // SkipLocation represents a megaskip location with its details
 type SkipLocation struct {
@@ -55,7 +51,7 @@ func InitCache() {
 	}
 }
 
-// HandleIndex handles the main page request
+// HandleIndex handles the main page request - serves static HTML
 func HandleIndex(w http.ResponseWriter, r *http.Request) {
 	// Set security headers
 	w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -70,16 +66,28 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
 			"connect-src 'self' https://nominatim.openstreetmap.org; "+
 			"font-src 'self' data:;")
 
-	// Get skip locations (from cache or fetch fresh)
+	// Serve static HTML template directly
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(htmlTemplate))
+}
+
+// HandleSkipsAPI handles the API endpoint for skip data
+func HandleSkipsAPI(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	locations, err := getSkipLocations()
 	if err != nil {
 		log.Printf("Error getting skip locations: %v", err)
-		http.Error(w, "Failed to fetch skip locations", http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to fetch skip locations"})
 		return
 	}
 
-	// Render the page with locations embedded
-	renderPage(w, locations)
+	if err := json.NewEncoder(w).Encode(locations); err != nil {
+		log.Printf("Error encoding JSON: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to encode response"})
+	}
 }
 
 func getSkipLocations() ([]SkipLocation, error) {
@@ -330,21 +338,3 @@ func geocodePostcode(postcode string) (float64, float64, error) {
 	return lat, lng, nil
 }
 
-func renderPage(w http.ResponseWriter, locations []SkipLocation) {
-	// Convert locations to JSON for embedding
-	locationsJSON, err := json.Marshal(locations)
-	if err != nil {
-		http.Error(w, "Failed to encode locations", http.StatusInternalServerError)
-		return
-	}
-
-	data := map[string]interface{}{
-		"Locations":     template.JS(locationsJSON),
-		"LocationCount": len(locations),
-	}
-
-	if err := indexTemplate.Execute(w, data); err != nil {
-		log.Printf("Template execution error: %v", err)
-		http.Error(w, "Failed to render page", http.StatusInternalServerError)
-	}
-}
