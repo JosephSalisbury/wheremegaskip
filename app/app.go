@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -164,6 +165,25 @@ func scrapeCouncilWebsite() ([]SkipLocation, error) {
 		}
 	}
 
+	// Geocode each location
+	log.Printf("Geocoding %d locations...", len(filtered))
+	for i := range filtered {
+		lat, lng, err := geocodePostcode(filtered[i].Postcode)
+		if err != nil {
+			log.Printf("Failed to geocode %s: %v", filtered[i].Postcode, err)
+			continue
+		}
+		filtered[i].Latitude = lat
+		filtered[i].Longitude = lng
+		log.Printf("Geocoded %s: %.4f, %.4f", filtered[i].Postcode, lat, lng)
+
+		// Respect Nominatim rate limit (1 request per second recommended)
+		if i < len(filtered)-1 {
+			time.Sleep(200 * time.Millisecond)
+		}
+	}
+	log.Println("Geocoding complete")
+
 	return filtered, nil
 }
 
@@ -256,6 +276,51 @@ func parseLocationLine(line string, date time.Time, dateStr string) SkipLocation
 		Date:     date,
 		DateStr:  dateStr,
 	}
+}
+
+// geocodePostcode calls Nominatim API to get lat/lng for a postcode
+func geocodePostcode(postcode string) (float64, float64, error) {
+	apiURL := fmt.Sprintf("https://nominatim.openstreetmap.org/search?q=%s+London+UK&format=json&limit=1&countrycodes=gb",
+		url.QueryEscape(postcode))
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("User-Agent", "WhereMegaSkip/1.0 (https://github.com/JosephSalisbury/wheremegaskip)")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to fetch geocode: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return 0, 0, fmt.Errorf("geocode API returned status %d", resp.StatusCode)
+	}
+
+	var results []struct {
+		Lat string `json:"lat"`
+		Lon string `json:"lon"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
+		return 0, 0, fmt.Errorf("failed to decode geocode response: %w", err)
+	}
+
+	if len(results) == 0 {
+		return 0, 0, fmt.Errorf("no geocode results for postcode %s", postcode)
+	}
+
+	var lat, lng float64
+	if _, err := fmt.Sscanf(results[0].Lat, "%f", &lat); err != nil {
+		return 0, 0, fmt.Errorf("failed to parse latitude: %w", err)
+	}
+	if _, err := fmt.Sscanf(results[0].Lon, "%f", &lng); err != nil {
+		return 0, 0, fmt.Errorf("failed to parse longitude: %w", err)
+	}
+
+	return lat, lng, nil
 }
 
 func renderPage(w http.ResponseWriter, locations []SkipLocation) {
@@ -1095,40 +1160,50 @@ const htmlTemplate = `<!DOCTYPE html>
         async function geocodeAllSkips() {
             showLoading();
             disableControls();
-            
-            // Geocode in parallel batches of 3 for faster loading
-            const batchSize = 3;
-            for (let i = 0; i < skipLocations.length; i += batchSize) {
-                const batch = skipLocations.slice(i, i + batchSize);
-                const results = await Promise.all(
-                    batch.map(async (skip) => {
-                        try {
-                            const result = await geocodePostcode(skip.postcode);
-                            if (result) {
-                                return {
-                                    ...skip,
-                                    lat: result.lat,
-                                    lng: result.lng
-                                };
+
+            // Check if server already geocoded the locations
+            const needsGeocoding = skipLocations.filter(skip => !skip.lat || !skip.lng);
+            const alreadyGeocoded = skipLocations.filter(skip => skip.lat && skip.lng);
+
+            // Add pre-geocoded skips directly
+            alreadyGeocoded.forEach(skip => geocodedSkips.push(skip));
+
+            // Only geocode client-side if server geocoding failed for some locations
+            if (needsGeocoding.length > 0) {
+                console.log('Geocoding', needsGeocoding.length, 'locations client-side (fallback)');
+                const batchSize = 3;
+                for (let i = 0; i < needsGeocoding.length; i += batchSize) {
+                    const batch = needsGeocoding.slice(i, i + batchSize);
+                    const results = await Promise.all(
+                        batch.map(async (skip) => {
+                            try {
+                                const result = await geocodePostcode(skip.postcode);
+                                if (result) {
+                                    return {
+                                        ...skip,
+                                        lat: result.lat,
+                                        lng: result.lng
+                                    };
+                                }
+                            } catch (err) {
+                                console.error('Failed to geocode', skip.postcode, err);
                             }
-                        } catch (err) {
-                            console.error('Failed to geocode', skip.postcode, err);
-                        }
-                        return null;
-                    })
-                );
-                
-                // Add successful results
-                results.forEach(result => {
-                    if (result) geocodedSkips.push(result);
-                });
-                
-                // Wait between batches to respect rate limits
-                if (i + batchSize < skipLocations.length) {
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                            return null;
+                        })
+                    );
+
+                    // Add successful results
+                    results.forEach(result => {
+                        if (result) geocodedSkips.push(result);
+                    });
+
+                    // Wait between batches to respect rate limits
+                    if (i + batchSize < needsGeocoding.length) {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
                 }
             }
-            
+
             // Set default to first (soonest) date
             const dates = getUniqueDates();
             if (dates.length > 0) {
