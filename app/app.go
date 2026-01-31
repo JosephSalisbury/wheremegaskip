@@ -391,48 +391,26 @@ const htmlTemplate = `<!DOCTYPE html>
             margin-bottom: 15px;
             padding-bottom: 15px;
             border-bottom: 1px solid #e0e0e0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
         }
-        
+
         @media (max-width: 768px) {
             #date-info {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
                 margin-bottom: 12px;
                 padding-bottom: 12px;
             }
         }
-        
-        #date-info h2 {
-            white-space: nowrap;
-            margin: 0;
-            flex-shrink: 0;
-        }
-        
-        @media (max-width: 768px) {
-            #date-info h2 {
-                white-space: normal;
-            }
-        }
-        
+
         .time-info {
+            display: block;
             color: #666;
             font-size: 13px;
-            font-weight: normal;
-            text-align: right;
-            flex-shrink: 1;
-            max-width: 280px;
+            margin-top: 10px;
         }
-        
+
         @media (max-width: 768px) {
             .time-info {
-                text-align: left;
-                max-width: 100%;
                 font-size: 12px;
+                margin-top: 8px;
             }
         }
         
@@ -694,15 +672,7 @@ const htmlTemplate = `<!DOCTYPE html>
         }
         
         #skip-items {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-        
-        @media (max-width: 600px) {
-            #skip-items {
-                grid-template-columns: 1fr;
-            }
+            /* Container for date groups or single date items */
         }
         
         #footer {
@@ -885,6 +855,82 @@ const htmlTemplate = `<!DOCTYPE html>
             font-size: 16px;
             font-weight: bold;
         }
+
+        #date-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .date-tab {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #0074A2;
+            background: white;
+            color: #0074A2;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .date-tab.active {
+            background: #0074A2;
+            color: white;
+        }
+
+        .date-tab:hover {
+            background: #E8F5F9;
+        }
+
+        .date-tab.active:hover {
+            background: #005580;
+        }
+
+        @media (max-width: 768px) {
+            #date-tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 4px;
+            }
+
+            .date-tab {
+                flex-shrink: 0;
+                padding: 10px 14px;
+                font-size: 13px;
+                min-height: 44px;
+            }
+        }
+
+        .date-group {
+            margin-bottom: 24px;
+        }
+
+        .date-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .date-group-header {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0074A2;
+            padding: 10px 0;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #0074A2;
+        }
+
+        .date-group-items {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .date-group-items {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -896,8 +942,8 @@ const htmlTemplate = `<!DOCTYPE html>
         
         <div id="date-banner">
             <div id="date-info">
-                <h2>Next Mega Skip Day: <span id="next-date">Loading...</span></h2>
-                <span class="time-info">Skips open at 9am and close when they're full, or 12 noon - whichever comes first.</span>
+                <div id="date-tabs"><div class="loading">Loading...</div></div>
+                <span class="time-info">Skips open at 9am and close when full, or 12 noon.</span>
             </div>
             <div class="control-group">
                 <button id="useLocation" onclick="requestLocation()">
@@ -946,6 +992,95 @@ const htmlTemplate = `<!DOCTYPE html>
         let nearestSkipIndex = null;
         let geocodedSkips = [];
         let routeLine = null;
+        let selectedDate = null;
+
+        function getUniqueDates() {
+            const seen = new Set();
+            return geocodedSkips.filter(s => {
+                if (seen.has(s.dateStr)) return false;
+                seen.add(s.dateStr);
+                return true;
+            }).map(s => s.dateStr);
+        }
+
+        function getSkipsForDate(dateStr) {
+            if (!dateStr) return geocodedSkips;
+            return geocodedSkips.filter(s => s.dateStr === dateStr);
+        }
+
+        function formatShortDate(dateStr) {
+            const parts = dateStr.split(' ');
+            if (parts.length >= 3) {
+                return parts[0].substring(0, 3) + ' ' + parts[1] + ' ' + parts[2].substring(0, 3);
+            }
+            return dateStr;
+        }
+
+        function renderDateTabs() {
+            const container = document.getElementById('date-tabs');
+            const dates = getUniqueDates();
+
+            let html = '';
+            dates.forEach(function(dateStr, index) {
+                const isActive = selectedDate === dateStr;
+                html += '<button class="date-tab' + (isActive ? ' active' : '') +
+                        '" data-date-index="' + index + '">' +
+                        escapeHtml(formatShortDate(dateStr)) + '</button>';
+            });
+
+            html += '<button class="date-tab' + (selectedDate === null ? ' active' : '') +
+                    '" data-date-index="-1">All Dates</button>';
+
+            container.innerHTML = html;
+
+            // Add click handlers
+            container.querySelectorAll('.date-tab').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-date-index'));
+                    if (index === -1) {
+                        selectDate(null);
+                    } else {
+                        selectDate(dates[index]);
+                    }
+                });
+            });
+        }
+
+        function selectDate(dateStr) {
+            selectedDate = dateStr;
+            renderDateTabs();
+            updateMarkersForDate();
+            renderSkipList();
+            if (userLocation) {
+                updateWithUserLocation();
+            }
+        }
+
+        function updateMarkersForDate() {
+            markers.forEach(function(marker, index) {
+                const skip = geocodedSkips[index];
+                const isVisible = selectedDate === null || skip.dateStr === selectedDate;
+
+                if (isVisible) {
+                    if (!map.hasLayer(marker)) {
+                        marker.addTo(map);
+                    }
+                } else {
+                    if (map.hasLayer(marker)) {
+                        map.removeLayer(marker);
+                    }
+                }
+            });
+
+            const visibleSkips = selectedDate ? getSkipsForDate(selectedDate) : geocodedSkips;
+            if (visibleSkips.length > 0) {
+                const bounds = L.latLngBounds(visibleSkips.map(s => [s.lat, s.lng]));
+                if (userLocation) {
+                    bounds.extend([userLocation.lat, userLocation.lng]);
+                }
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
         
         // Initialize map centered on Wandsworth
         function initMap() {
@@ -996,16 +1131,18 @@ const htmlTemplate = `<!DOCTYPE html>
                 }
             }
             
+            // Set default to first (soonest) date
+            const dates = getUniqueDates();
+            if (dates.length > 0) {
+                selectedDate = dates[0];
+            }
+
             addSkipMarkers();
+            updateMarkersForDate();
+            renderDateTabs();
             renderSkipList();
             enableControls();
             hideMapLoading();
-            fitMapToSkips();
-            
-            // Set the date
-            if (geocodedSkips.length > 0) {
-                document.getElementById('next-date').textContent = geocodedSkips[0].dateStr;
-            }
         }
         
         function hideMapLoading() {
@@ -1046,19 +1183,57 @@ const htmlTemplate = `<!DOCTYPE html>
         
         function renderSkipList() {
             const container = document.getElementById('skip-items');
-            if (geocodedSkips.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #999;">No upcoming skip days found.</p>';
+            const skipsToShow = selectedDate ? getSkipsForDate(selectedDate) : geocodedSkips;
+
+            if (skipsToShow.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">No skip locations for this date.</p>';
                 return;
             }
-            
+
             let html = '';
-            geocodedSkips.forEach(function(skip, index) {
-                html += '<div class="skip-item" data-skip-index="' + index + '" onclick="focusSkip(' + index + ')">' +
-                    '<h4>📍 ' + escapeHtml(toTitleCase(skip.address)) + '</h4>' +
-                    '<p>📮 ' + escapeHtml(skip.postcode) + '</p>' +
-                    '<p>📅 ' + escapeHtml(skip.dateStr) + '</p>' +
-                    '</div>';
-            });
+            const dates = getUniqueDates();
+
+            if (selectedDate === null && dates.length > 1) {
+                // Group by date when showing all
+                dates.forEach(function(dateStr) {
+                    const skipsForDate = skipsToShow.filter(s => s.dateStr === dateStr);
+                    if (skipsForDate.length === 0) return;
+
+                    html += '<div class="date-group">';
+                    html += '<div class="date-group-header">' + escapeHtml(dateStr) + '</div>';
+                    html += '<div class="date-group-items">';
+
+                    skipsForDate.forEach(function(skip) {
+                        const index = geocodedSkips.indexOf(skip);
+                        const isNearest = nearestSkipIndex === index;
+                        html += '<div class="skip-item' + (isNearest ? ' nearest' : '') +
+                            '" data-skip-index="' + index + '" onclick="focusSkip(' + index + ')">' +
+                            '<h4>' + (isNearest ? '🎯 ' : '📍 ') + escapeHtml(toTitleCase(skip.address)) + '</h4>' +
+                            '<p>📮 ' + escapeHtml(skip.postcode) + '</p>' +
+                            '<p>📅 ' + escapeHtml(skip.dateStr) + '</p>' +
+                            '</div>';
+                    });
+
+                    html += '</div></div>';
+                });
+            } else {
+                // Single date view - still show header for consistency
+                html += '<div class="date-group">';
+                html += '<div class="date-group-header">' + escapeHtml(selectedDate) + '</div>';
+                html += '<div class="date-group-items">';
+                skipsToShow.forEach(function(skip) {
+                    const index = geocodedSkips.indexOf(skip);
+                    const isNearest = nearestSkipIndex === index;
+                    html += '<div class="skip-item' + (isNearest ? ' nearest' : '') +
+                        '" data-skip-index="' + index + '" onclick="focusSkip(' + index + ')">' +
+                        '<h4>' + (isNearest ? '🎯 ' : '📍 ') + escapeHtml(toTitleCase(skip.address)) + '</h4>' +
+                        '<p>📮 ' + escapeHtml(skip.postcode) + '</p>' +
+                        '<p>📅 ' + escapeHtml(skip.dateStr) + '</p>' +
+                        '</div>';
+                });
+                html += '</div></div>';
+            }
+
             container.innerHTML = html;
         }
         
@@ -1187,11 +1362,12 @@ const htmlTemplate = `<!DOCTYPE html>
                 })
             }).bindPopup('📍 You are here').addTo(map);
             
-            // Calculate distances and find nearest
+            // Calculate distances and find nearest (respecting date filter)
             let nearest = null;
             let nearestDist = Infinity;
-            
-            geocodedSkips.forEach(function(skip) {
+            const skipsToConsider = selectedDate ? getSkipsForDate(selectedDate) : geocodedSkips;
+
+            skipsToConsider.forEach(function(skip) {
                 if (!skip.lat || !skip.lng) return;
                 const dist = calculateDistance(userLocation.lat, userLocation.lng, skip.lat, skip.lng);
                 skip.distance = dist;
@@ -1258,38 +1434,28 @@ const htmlTemplate = `<!DOCTYPE html>
         function showNearestSkip(skip) {
             // Find and store the index of the nearest skip
             nearestSkipIndex = geocodedSkips.indexOf(skip);
-            
+
             // Show nearest info section
             const nearestInfo = document.getElementById('nearest-info');
             const nearestDetails = document.getElementById('nearest-details');
-            
+
             // Add click handler to nearest info
             nearestInfo.onclick = function() {
                 if (nearestSkipIndex !== null) {
                     focusSkip(nearestSkipIndex);
                 }
             };
-            
-            nearestDetails.innerHTML = 
+
+            nearestDetails.innerHTML =
                 '<div class="nearest-detail"><strong>📍 Location:</strong> ' + escapeHtml(skip.address) + '</div>' +
                 '<div class="nearest-detail"><strong>📮 Postcode:</strong> ' + escapeHtml(skip.postcode) + '</div>' +
                 '<div class="nearest-detail"><strong>📅 Available on:</strong> ' + escapeHtml(skip.dateStr) + '</div>';
-            
+
             nearestInfo.classList.add('visible');
-            
+
             // Re-render list with nearest highlighted
-            const container = document.getElementById('skip-items');
-            let html = '';
-            geocodedSkips.forEach(function(s, index) {
-                const isNearest = s === skip;
-                html += '<div class="skip-item' + (isNearest ? ' nearest' : '') + '" data-skip-index="' + index + '" onclick="focusSkip(' + index + ')">' +
-                    '<h4>' + (isNearest ? '🎯 ' : '📍 ') + escapeHtml(toTitleCase(s.address)) + '</h4>' +
-                    '<p>📮 ' + escapeHtml(s.postcode) + '</p>' +
-                    '<p>📅 ' + escapeHtml(s.dateStr) + '</p>' +
-                    '</div>';
-            });
-            container.innerHTML = html;
-            
+            renderSkipList();
+
             // Scroll to nearest info
             nearestInfo.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
