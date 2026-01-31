@@ -12,6 +12,7 @@ func main() {
 	app.InitCache()
 
 	http.HandleFunc("/", app.HandleIndex)
+	http.HandleFunc("/api/skips", app.HandleSkipsAPI)
 
 	port := os.Getenv("PORT")
 	if port == "" {
