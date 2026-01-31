@@ -38,7 +38,7 @@ type Cache struct {
 }
 
 var cache = &Cache{
-	ttl: 1 * time.Hour, // Default 1 hour, configurable via env var
+	ttl: 3 * time.Hour, // Default 3 hours, configurable via env var
 }
 
 // InitCache sets up the cache with the configured TTL

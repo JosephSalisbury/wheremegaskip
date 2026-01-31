@@ -73,7 +73,7 @@ No additional configuration needed.
 1. **Server fetches** the council website HTML
 2. **Parser extracts** dates, locations, and postcodes  
 3. **Geocoder converts** postcodes to lat/lng coordinates
-4. **Cache stores** the data for 1 hour (configurable)
+4. **Cache stores** the data for 3 hours (configurable)
 5. **Server renders** a single HTML page with data embedded as JSON
 6. **Client-side JS** handles:
    - User geolocation
