@@ -1266,7 +1266,7 @@ const htmlTemplate = `<!DOCTYPE html>
                     })
                 });
                 
-                marker.bindPopup('<h4>' + skip.address + '</h4>' +
+                marker.bindPopup('<h4>' + escapeHtml(toTitleCase(skip.address)) + '</h4>' +
                     '<p><strong>📅 ' + skip.dateStr + '</strong></p>' +
                     '<p>🕘 Opens 9am - 12pm (or when full)</p>' +
                     '<p>📮 ' + skip.postcode + '</p>');
@@ -1445,7 +1445,7 @@ const htmlTemplate = `<!DOCTYPE html>
             };
 
             nearestDetails.innerHTML =
-                '<div class="nearest-detail"><strong>📍 Location:</strong> ' + escapeHtml(skip.address) + '</div>' +
+                '<div class="nearest-detail"><strong>📍 Location:</strong> ' + escapeHtml(toTitleCase(skip.address)) + '</div>' +
                 '<div class="nearest-detail"><strong>📮 Postcode:</strong> ' + escapeHtml(skip.postcode) + '</div>' +
                 '<div class="nearest-detail"><strong>📅 Available on:</strong> ' + escapeHtml(skip.dateStr) + '</div>';
 
