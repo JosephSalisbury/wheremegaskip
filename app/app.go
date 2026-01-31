@@ -889,17 +889,15 @@ const htmlTemplate = `<!DOCTYPE html>
 
         @media (max-width: 768px) {
             #date-tabs {
-                overflow-x: auto;
-                flex-wrap: nowrap;
-                -webkit-overflow-scrolling: touch;
-                padding-bottom: 4px;
+                flex-direction: column;
+                gap: 6px;
             }
 
             .date-tab {
-                flex-shrink: 0;
-                padding: 10px 14px;
-                font-size: 13px;
+                padding: 12px 16px;
+                font-size: 14px;
                 min-height: 44px;
+                text-align: center;
             }
         }
 
