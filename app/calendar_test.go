@@ -171,14 +171,14 @@ func TestGenerateICalFeed(t *testing.T) {
 	events := []CalendarEvent{
 		{
 			Date:        time.Date(2025, 3, 15, 0, 0, 0, 0, time.UTC),
-			Title:       "Wandsworth Megaskip",
-			Description: "Opens 9am, closes at 12 noon or when full.",
+			Title:       "Wandsworth Mega Skip",
+			Description: "https://wheremegaskip.com",
 			Location:    "",
 		},
 		{
 			Date:        time.Date(2025, 3, 22, 0, 0, 0, 0, time.UTC),
-			Title:       "Wandsworth Megaskip",
-			Description: "Opens 9am, closes at 12 noon or when full.",
+			Title:       "Wandsworth Mega Skip",
+			Description: "https://wheremegaskip.com",
 			Location:    "Pountney Road, SW11 5TU, London, UK",
 		},
 	}
@@ -198,7 +198,7 @@ func TestGenerateICalFeed(t *testing.T) {
 		"END:VCALENDAR",
 		"DTSTART;TZID=Europe/London:20250315T090000",
 		"DTEND;TZID=Europe/London:20250315T120000",
-		"SUMMARY:Wandsworth Megaskip",
+		"SUMMARY:Wandsworth Mega Skip",
 		"LOCATION:Pountney Road\\, SW11 5TU\\, London\\, UK",
 	}
 
@@ -218,7 +218,7 @@ func TestGenerateICalFeedNoLocation(t *testing.T) {
 	events := []CalendarEvent{
 		{
 			Date:        time.Date(2025, 3, 15, 0, 0, 0, 0, time.UTC),
-			Title:       "Wandsworth Megaskip",
+			Title:       "Wandsworth Mega Skip",
 			Description: "Test description",
 			Location:    "",
 		},
