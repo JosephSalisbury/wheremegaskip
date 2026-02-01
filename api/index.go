@@ -17,5 +17,15 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.URL.Path == "/calendar.ics" {
+		app.HandleCalendarDefault(w, r)
+		return
+	}
+
+	if strings.HasPrefix(r.URL.Path, "/calendar/") && strings.HasSuffix(r.URL.Path, ".ics") {
+		app.HandleCalendarPostcode(w, r)
+		return
+	}
+
 	app.HandleIndex(w, r)
 }

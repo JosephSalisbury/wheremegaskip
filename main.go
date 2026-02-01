@@ -13,6 +13,8 @@ func main() {
 
 	http.HandleFunc("/", app.HandleIndex)
 	http.HandleFunc("/api/skips", app.HandleSkipsAPI)
+	http.HandleFunc("/calendar.ics", app.HandleCalendarDefault)
+	http.HandleFunc("/calendar/", app.HandleCalendarPostcode)
 
 	port := os.Getenv("PORT")
 	if port == "" {
