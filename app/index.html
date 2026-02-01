@@ -649,6 +649,104 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        #calendar-subscribe {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            #calendar-subscribe {
+                padding: 15px;
+                margin-top: 12px;
+                border-radius: 6px;
+            }
+        }
+
+        #calendar-subscribe h3 {
+            margin-top: 0;
+            color: #0074A2;
+            font-size: 20px;
+        }
+
+        @media (max-width: 768px) {
+            #calendar-subscribe h3 {
+                font-size: 18px;
+            }
+        }
+
+        #calendar-subscribe > p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .calendar-options {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .calendar-options {
+                flex-direction: column;
+            }
+        }
+
+        .calendar-option {
+            flex: 1;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            border-left: 4px solid #0074A2;
+        }
+
+        .calendar-option h4 {
+            margin: 0 0 12px 0;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .calendar-option button {
+            width: 100%;
+        }
+
+        .calendar-option button.copied {
+            background: #4CAF50;
+        }
+
+        .postcode-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .postcode-input {
+                flex-direction: column;
+            }
+        }
+
+        .postcode-input input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .postcode-input input[type="text"] {
+                padding: 14px 12px;
+                font-size: 16px;
+            }
+        }
+
+        .postcode-input button {
+            flex: 1;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -668,7 +766,7 @@
                     Use My Location
                 </button>
                 <span style="color: #999;">or</span>
-                <input type="text" id="address" placeholder="Enter postcode or address" style="flex: 1;">
+                <input type="text" id="address" placeholder="Enter your postcode" style="flex: 1;">
                 <button onclick="searchAddress()">Search</button>
             </div>
         </div>
@@ -692,6 +790,27 @@
             <h3>All Mega Skip Locations</h3>
             <div id="skip-items">
                 <div class="loading">Loading...</div>
+            </div>
+        </div>
+
+        <div id="calendar-subscribe">
+            <h3>Add to Calendar</h3>
+            <p>Add Where Mega Skip? to your calendar</p>
+
+            <div class="calendar-options">
+                <div class="calendar-option">
+                    <h4>Calendar</h4>
+                    <input type="hidden" id="default-calendar-url">
+                    <button id="copy-calendar-btn" onclick="copyDefaultCalendarUrl()">Copy URL</button>
+                </div>
+
+                <div class="calendar-option">
+                    <h4>Personalized Calendar</h4>
+                    <div class="postcode-input">
+                        <input type="text" id="calendar-postcode" placeholder="Enter your postcode">
+                        <button id="generate-calendar-btn" onclick="generatePostcodeCalendarUrl()">Generate URL</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1247,12 +1366,71 @@
         // Initialize on load
         initMap();
 
+        // Set default calendar URL
+        document.getElementById('default-calendar-url').value = window.location.origin + '/calendar.ics';
+
         // Allow Enter key in address field
         document.getElementById('address').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 searchAddress();
             }
         });
+
+        // Allow Enter key in calendar postcode field
+        document.getElementById('calendar-postcode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                generatePostcodeCalendarUrl();
+            }
+        });
+
+        function copyDefaultCalendarUrl() {
+            var url = document.getElementById('default-calendar-url').value;
+            var btn = document.getElementById('copy-calendar-btn');
+            navigator.clipboard.writeText(url).then(function() {
+                var originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(function() {
+                    btn.textContent = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(function() {
+                // Fallback for older browsers
+                var temp = document.createElement('input');
+                temp.value = url;
+                document.body.appendChild(temp);
+                temp.select();
+                document.execCommand('copy');
+                document.body.removeChild(temp);
+            });
+        }
+
+        function generatePostcodeCalendarUrl() {
+            var postcode = document.getElementById('calendar-postcode').value.trim();
+            if (!postcode) {
+                alert('Please enter a postcode');
+                return;
+            }
+            var url = window.location.origin + '/calendar/' + encodeURIComponent(postcode) + '.ics';
+            var btn = document.getElementById('generate-calendar-btn');
+            navigator.clipboard.writeText(url).then(function() {
+                var originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(function() {
+                    btn.textContent = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(function() {
+                // Fallback for older browsers
+                var temp = document.createElement('input');
+                temp.value = url;
+                document.body.appendChild(temp);
+                temp.select();
+                document.execCommand('copy');
+                document.body.removeChild(temp);
+            });
+        }
     </script>
 </body>
 </html>
