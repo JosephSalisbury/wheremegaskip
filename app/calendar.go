@@ -95,7 +95,8 @@ func generateICalFeed(events []CalendarEvent) string {
 	sb.WriteString("PRODID:-//WhereMegaSkip//Calendar//EN\r\n")
 	sb.WriteString("CALSCALE:GREGORIAN\r\n")
 	sb.WriteString("METHOD:PUBLISH\r\n")
-	sb.WriteString("X-WR-CALNAME:Wandsworth Megaskip\r\n")
+	sb.WriteString("NAME:Where Mega Skip?\r\n")
+	sb.WriteString("X-WR-CALNAME:Where Mega Skip?\r\n")
 	sb.WriteString("X-WR-TIMEZONE:Europe/London\r\n")
 
 	// VTIMEZONE component for Europe/London
@@ -165,8 +166,8 @@ func HandleCalendarDefault(w http.ResponseWriter, r *http.Request) {
 	for date := range groups {
 		events = append(events, CalendarEvent{
 			Date:        date,
-			Title:       "Wandsworth Megaskip",
-			Description: "Opens 9am, closes at 12 noon or when full.\\nhttps://wheremegaskip.com",
+			Title:       "Wandsworth Mega Skip",
+			Description: "https://wheremegaskip.com",
 			Location:    "",
 		})
 	}
@@ -236,8 +237,8 @@ func HandleCalendarPostcode(w http.ResponseWriter, r *http.Request) {
 
 		events = append(events, CalendarEvent{
 			Date:        date,
-			Title:       "Wandsworth Megaskip",
-			Description: "Opens 9am, closes at 12 noon or when full.\\nhttps://wheremegaskip.com",
+			Title:       "Wandsworth Mega Skip",
+			Description: "https://wheremegaskip.com",
 			Location:    location,
 		})
 	}
