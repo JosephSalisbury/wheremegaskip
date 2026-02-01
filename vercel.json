@@ -6,9 +6,6 @@
       "destination": "/api/index.go"
     }
   ],
-  "env": {
-    "CACHE_TTL_MINUTES": "60"
-  },
   "headers": [
     {
       "source": "/(.*)",
