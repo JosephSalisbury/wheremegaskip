@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"fmt"
@@ -29,25 +30,35 @@ type SkipLocation struct {
 	Longitude float64   `json:"lng"`
 }
 
-// Cache holds the skip locations with expiry
-type Cache struct {
-	data      []SkipLocation
-	timestamp time.Time
-	mu        sync.RWMutex
-	ttl       time.Duration
-}
+const cacheKey = "skip_locations"
 
-var cache = &Cache{
-	ttl: 3 * time.Hour, // Default 3 hours, configurable via env var
-}
+var (
+	activeCache Cacher
+	cacheTTL    = 3 * time.Hour
+	cacheMu     sync.RWMutex
+)
 
-// InitCache sets up the cache with the configured TTL
+// InitCache sets up the cache based on environment configuration
 func InitCache() {
+	// Configure TTL
 	if ttl := os.Getenv("CACHE_TTL_MINUTES"); ttl != "" {
 		if minutes, err := time.ParseDuration(ttl + "m"); err == nil {
-			cache.ttl = minutes
-			log.Printf("Cache TTL set to %v", cache.ttl)
+			cacheTTL = minutes
+			log.Printf("Cache TTL set to %v", cacheTTL)
 		}
+	}
+
+	// Select cache implementation based on CACHE_TYPE
+	cacheType := os.Getenv("CACHE_TYPE")
+	redisURL := os.Getenv("UPSTASH_REDIS_REST_URL")
+	redisToken := os.Getenv("UPSTASH_REDIS_REST_TOKEN")
+
+	if cacheType == "redis" && redisURL != "" && redisToken != "" {
+		activeCache = NewRedisCache(redisURL, redisToken)
+		log.Println("Using Redis cache (Upstash)")
+	} else {
+		activeCache = NewMemoryCache()
+		log.Println("Using in-memory cache")
 	}
 }
 
@@ -91,31 +102,39 @@ func HandleSkipsAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func getSkipLocations() ([]SkipLocation, error) {
-	cache.mu.RLock()
-	if cache.data != nil && time.Since(cache.timestamp) < cache.ttl {
-		defer cache.mu.RUnlock()
+	ctx := context.Background()
+
+	// Try to get from cache
+	cacheMu.RLock()
+	locations, err := activeCache.Get(ctx, cacheKey)
+	cacheMu.RUnlock()
+
+	if err != nil {
+		log.Printf("Cache get error: %v", err)
+	} else if locations != nil {
 		log.Println("Serving from cache")
-		return cache.data, nil
+		return locations, nil
 	}
-	cache.mu.RUnlock()
 
 	// Need to fetch fresh data
-	cache.mu.Lock()
-	defer cache.mu.Unlock()
+	cacheMu.Lock()
+	defer cacheMu.Unlock()
 
 	// Double-check after acquiring write lock
-	if cache.data != nil && time.Since(cache.timestamp) < cache.ttl {
-		return cache.data, nil
+	locations, err = activeCache.Get(ctx, cacheKey)
+	if err == nil && locations != nil {
+		return locations, nil
 	}
 
 	log.Println("Fetching fresh data from council website")
-	locations, err := scrapeCouncilWebsite()
+	locations, err = scrapeCouncilWebsite()
 	if err != nil {
 		return nil, fmt.Errorf("scraping failed: %w", err)
 	}
 
-	cache.data = locations
-	cache.timestamp = time.Now()
+	if err := activeCache.Set(ctx, cacheKey, locations, cacheTTL); err != nil {
+		log.Printf("Cache set error: %v", err)
+	}
 
 	return locations, nil
 }
