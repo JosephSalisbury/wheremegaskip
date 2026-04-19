@@ -227,8 +227,11 @@ func parseSkipDate(dateStr string, year int) (time.Time, error) {
 	formats := []string{
 		"Monday 2 January",
 		"Monday 02 January",
+		"2 January",
+		"02 January",
 	}
 
+	dateStr = strings.TrimSpace(dateStr)
 	dateStr = fmt.Sprintf("%s %d", dateStr, year)
 
 	for _, format := range formats {
@@ -270,11 +273,16 @@ func parseLocationLine(line string, date time.Time, dateStr string) SkipLocation
 	// Format is typically: "Location Name, POSTCODE"
 	// Example: "Pountney Road, SW11 5TU"
 
-	// Remove bullet points and trim
+	// Remove bullet points, numbered prefixes, and trim
 	line = strings.TrimSpace(line)
 	line = strings.TrimPrefix(line, "•")
 	line = strings.TrimPrefix(line, "-")
 	line = strings.TrimPrefix(line, "*")
+	line = strings.TrimSpace(line)
+
+	// Strip numbered prefixes like "1. ", "2.  "
+	numberedPrefix := regexp.MustCompile(`^\d+\.\s+`)
+	line = numberedPrefix.ReplaceAllString(line, "")
 	line = strings.TrimSpace(line)
 
 	if line == "" {
